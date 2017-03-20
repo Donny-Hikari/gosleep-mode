@@ -1,0 +1,96 @@
+#!/bin/bash
+
+# Param following: battery_new_time ac_new_time addon_text_about_timeout
+set_timeout_battery_ac()
+{
+	battery_old_timeout=`gsettings get org.gnome.settings-daemon.plugins.power sleep-inactive-battery-timeout`
+	ac_old_timeout=`gsettings get org.gnome.settings-daemon.plugins.power sleep-inactive-ac-timeout`
+
+	gsettings set org.gnome.settings-daemon.plugins.power sleep-inactive-battery-timeout $1
+	gsettings set org.gnome.settings-daemon.plugins.power sleep-inactive-ac-timeout $2
+
+	echo "Inactive Battery Timeout: ${battery_old_timeout}s => ${1}s" $3
+	echo "Inactive AC Timeout: ${ac_old_timeout}s => ${2}s" $3
+}
+
+
+SHUTDOWN_TIME=${1}
+SHUTDOWN_TIME_SEC=60*${1}
+AC_TIMEOUT=$(($SHUTDOWN_TIME_SEC + 60))
+BATTERY_TIMEOUT=$(($SHUTDOWN_TIME_SEC + 60))
+WAIT_TIME=$(($SHUTDOWN_TIME_SEC))
+
+battery_ogn_timeout=`gsettings get org.gnome.settings-daemon.plugins.power sleep-inactive-battery-timeout`
+ac_ogn_timeout=`gsettings get org.gnome.settings-daemon.plugins.power sleep-inactive-ac-timeout`
+
+sleep_until_timeto_shutdown()
+{
+	sleep $WAIT_TIME
+
+	echo ;
+	echo ;
+	set_timeout_battery_ac $battery_ogn_timeout $ac_ogn_timeout
+	echo ;
+	
+	echo "About to shutdown."
+	shutdown -P 1
+}
+
+notice_when_waiting()
+{
+	echo "Use [abort(a)|cancel(c)] to abort."
+	echo -n "Input command > "
+}
+
+main_process()
+{
+	set_timeout_battery_ac $BATTERY_TIMEOUT $AC_TIMEOUT "(Temporary)"
+	echo ;
+
+	echo "Wait $SHUTDOWN_TIME minutes and then the computer will shutdown."
+	echo ;
+
+	notice_when_waiting
+	sleep_until_timeto_shutdown &
+	shutdown_ctl_pid=$!
+
+	while true
+	do
+		read input
+		case $input in
+			abort|cancel|a|c)
+			echo ;
+			set_timeout_battery_ac $battery_ogn_timeout $ac_ogn_timeout
+			echo ;
+
+			#echo $shutdown_ctl_pid
+			kill $shutdown_ctl_pid
+			#sleep 2
+			shutdown -c
+			#jobs
+
+			echo "Shutdown aborted."
+			exit 0
+			;;
+			*)
+			echo "Invail input \"$input\"."
+			echo ;
+			notice_when_waiting
+			;;
+		esac
+	done
+}
+
+if (($SHUTDOWN_TIME>=1))
+then
+	main_process
+elif (($SHUTDOWN_TIME>0))
+then
+	echo "Schedule time should be greater than 1 minute."
+else
+	echo "Invaid Argument \"$1\""
+	echo "Usage: $0 [timeleft-to-shutdown-in-minutes]"
+	exit 3
+fi
+
+:
