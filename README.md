@@ -1,5 +1,7 @@
 # Introduction
-This is a script to shutdown the computer after a current time, and prevent the computer go suspended or turnning off the power automatically.
+(This is a script to help you go to sleep soundly, oh wait, no, that's not true.)
+
+This is a script to shutdown the computer after a current time, and prevent the computer from going suspended or turnning off the power automatically.
 
 # Install
 Put the script in somewhere handy so that you can start it easily~
