@@ -14,6 +14,16 @@ set_timeout_battery_ac()
 }
 
 
+print_usage()
+{
+	echo "Usage: $0 [timeleft-to-shutdown-in-minutes]"
+}
+
+if [ -z "$1" ]; then
+	print_usage
+	exit 3
+fi
+
 SHUTDOWN_TIME=${1}
 SHUTDOWN_TIME_SEC=60*${1}
 AC_TIMEOUT=$(($SHUTDOWN_TIME_SEC + 60))
@@ -33,7 +43,8 @@ sleep_until_timeto_shutdown()
 	echo ;
 	
 	echo "About to shutdown."
-	shutdown -P 1
+	# shutdown -H now
+	systemctl poweroff
 }
 
 notice_when_waiting()
@@ -89,7 +100,7 @@ then
 	echo "Schedule time should be greater than 1 minute."
 else
 	echo "Invaid Argument \"$1\""
-	echo "Usage: $0 [timeleft-to-shutdown-in-minutes]"
+	print_usage
 	exit 3
 fi
 
